@@ -1,0 +1,33 @@
+@namespace DoggoDex.Shared
+@inherits LayoutComponentBase
+
+<div id="app">
+
+  <header class="top-bar">
+    <div class="top-bar-logo">
+      <a class="logo" href="">
+        <img src="img/logo.png" />
+      </a>
+      <span class="app-name">DoggoDex</span>
+    </div>
+
+    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+      <img src="img/user.svg" />
+      <div>My Profile</div>
+    </NavLink>
+
+    <NavLink href="mydogs" class="nav-tab">
+      <img src="img/mydogs.svg" />
+      <div>My Dogs</div>
+    </NavLink>
+  </header>
+
+  <div class="content">
+    @Body
+  </div>
+
+  <footer  class="p-2">
+    &copy; DoggoDex @DateTime.UtcNow.Year
+  </footer>
+
+</div>
