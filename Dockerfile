@@ -1,5 +1,5 @@
 # Step 1: Build the application using the .NET 9 SDK
-FROM mcr.microsoft.com AS build
+FROM ://microsoft.com AS build
 WORKDIR /src
 
 # Copy the csproj file and restore dependencies
@@ -11,13 +11,13 @@ COPY . .
 RUN dotnet publish -c Release -o /app/publish
 
 # Step 2: Create the runtime image
-FROM mcr.microsoft.com AS final
+FROM ://microsoft.com AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
 # Render exposes traffic via the PORT environment variable.
-# This forces the .NET app to listen on that exact port.
-ENV ASPNETCORE_URLS=http://+:10000
+# This forces the .NET app to listen on the port Render assigns.
+ENV ASPNETCORE_URLS=http://+:${PORT:-10000}
 EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "DoggoDex.dll"]
