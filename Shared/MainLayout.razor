@@ -1,33 +1,119 @@
 @namespace DoggoDex.Shared
 @inherits LayoutComponentBase
+@inject UserSessionState SessionState
 
 <div id="app">
 
   <header class="top-bar">
     <div class="top-bar-logo">
-      <a class="logo" href="">
-        <img src="img/logo.png" />
+      <a class="logo" href="/">
+        <img src="img/icon.png" alt="Logo" />
       </a>
-      <span class="app-name">DoggoDex</span>
+      <a class="app-name" href="">DoggoDex</a>
     </div>
 
-    <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
-      <img src="img/user.svg" />
-      <div>My Profile</div>
-    </NavLink>
+    <!-- The native checkbox that tracks whether the mobile menu is open or closed -->
+    <input type="checkbox" id="nav-toggle" class="nav-toggle-check" />
+    
+    <!-- The functional hamburger menu button visible only on mobile screens -->
+    <label for="nav-toggle" class="hamburger" aria-label="Toggle Navigation Menu">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </label>
 
-    <NavLink href="mydogs" class="nav-tab">
-      <img src="img/mydogs.svg" />
-      <div>My Dogs</div>
-    </NavLink>
+    <!-- The responsive wrapping menu container -->
+    <div class="responsive-menu-wrapper">
+      <div class="nav-menu">
+        <NavLink href="" class="nav-tab" Match="NavLinkMatch.All">
+          <img src="img/home.svg" alt="Home" />
+          <div>Home</div>
+        </NavLink>
+
+        <AuthorizeView>
+          <Authorized>
+            @if (context.User.FindFirst("UserType")?.Value == "DogOwner")
+            {
+              <NavLink href="mydogs" class="nav-tab">
+                <img src="img/dog-paw.svg" alt="My Dogs" />
+                <div>My Dogs</div>
+              </NavLink>
+            }
+          </Authorized>
+        </AuthorizeView>
+        <AuthorizeView>
+          <Authorized>
+            @if (context.User.FindFirst("UserType")?.Value == "BusinessOwner")
+            {
+              <NavLink href="/reviews" class="nav-tab">
+                <img src="img/review.svg" alt="My Reviews" />
+                <div>My Reviews</div>
+              </NavLink>
+            }
+          </Authorized>
+        </AuthorizeView>
+        <NavLink href="/search" class="nav-tab">
+          <img src="img/search.svg" alt="Search" />
+          <div>Search</div>
+        </NavLink>
+      </div>
+
+      <!-- AUTHENTICATION MENU ACTIONS -->
+      <div class="auth-menu">
+        <AuthorizeView>
+          <Authorized>
+            <div class="user-info">
+              <div>
+                <span class="username">@(string.IsNullOrEmpty(SessionState.DisplayName) ? context.User.Identity?.Name : SessionState.DisplayName)</span>
+                <a href="/api/auth/logout">
+                  Sign Out
+                </a>
+              </div>
+            </div>
+            
+            <NavLink href="profile" class="nav-tab">
+              <img src="img/user.svg" alt="Profile" />
+              <div>Profile</div>
+            </NavLink>
+          </Authorized>
+          
+          <NotAuthorized>
+            <NavLink href="login" class="nav-tab">
+              <img src="img/user.svg" alt="Sign In" />
+              <div>Sign In</div>
+            </NavLink>
+          </NotAuthorized>
+        </AuthorizeView>
+      </div>
+    </div>
   </header>
 
   <div class="content">
-    @Body
+    <div class="main">
+      @Body
+    </div>
   </div>
 
-  <footer  class="p-2">
+  <footer class="p-2 bg-dark text-white">
     &copy; DoggoDex @DateTime.UtcNow.Year
   </footer>
 
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await SessionState.EnsureProfileLoadedAsync();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MainLayout Render Guard Handled]: {ex.Message}");
+            }
+        }
+    }
+}

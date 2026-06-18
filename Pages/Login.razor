@@ -1,0 +1,55 @@
+@page "/login"
+@inject NavigationManager Navigation
+
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow-sm p-4">
+        <h3 class="text-center mb-4">Sign In</h3>
+
+        <!-- Check for error messages passed back from the controller -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger text-center small py-2 mb-3">
+                @errorMessage
+            </div>
+        }
+
+        <form action="/api/auth/login" method="POST">
+            <AntiforgeryToken />
+
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="Email" class="form-control" required placeholder="name@example.com" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="Password" class="form-control" required placeholder="Enter your password" />
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="RememberMe" value="true" class="form-check-input" id="rememberMeCheck" />
+                <label class="form-check-label text-muted small" for="rememberMeCheck">Remember me on this device</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">Log In</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="/register" class="small text-decoration-none">Don't have an account? Sign up</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+
+    protected override void OnInitialized()
+    {
+        // Capture error details from the URL if a login attempt fails
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorMsg))
+        {
+            errorMessage = errorMsg;
+        }
+    }
+}

@@ -1,0 +1,399 @@
+@page "/mydogs"
+@using DoggoDex.Models
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Forms
+@inject IServiceProvider ServiceProvider
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>DoggoDex - My Dogs</PageTitle>
+
+<div class="container mt-4 animate-fade">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1">🐾 My Registered Dogs</h1>
+            <p class="text-muted mb-0">Manage your pet collection metadata and monitor verified business groomer review
+                charts.</p>
+            </div>
+            <!-- Open modal by toggling boolean state -->
+            <button class="btn btn-primary d-flex align-items-center gap-2" @onclick="OpenAddDogModal">
+                <span>➕</span> Add Dog
+            </button>
+        </div>
+
+        @if (!isLoaded)
+        {
+            <div class="text-center my-5 py-5">
+                <div class="spinner-border text-primary mb-2" role="status"></div>
+                <p class="text-muted small">Querying pet directories...</p>
+            </div>
+        }
+        else if (myDogsList == null || !myDogsList.Any())
+        {
+            <div class="card border border-dashed text-center p-5 bg-light my-4">
+                <div class="fs-1 text-muted mb-3">🦮</div>
+                <h3>No Dogs Registered Yet</h3>
+                <p class="text-muted max-width-md mx-auto">You haven't listed any furry companions on your profile directory
+                    card index yet.</p>
+                </div>
+            }
+    else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var dog in myDogsList)
+                    {
+                        <div class="col">
+                            <div class="card h-100 shadow-sm border border-light transition-hover">
+                                <div class="card-header-img position-relative bg-secondary text-white d-flex align-items-center justify-content-center"
+                                     style="height: 180px; overflow: hidden; background: linear-gradient(135deg, #00143a 0%, #002e85 100%);">
+                                    @if (dog.ProfilePicture != null && dog.ProfilePicture.Length > 0)
+                                    {
+                                        <img src="data:image/jpeg;base64,@Convert.ToBase64String(dog.ProfilePicture)"
+                                             class="w-100 h-100 object-fit-cover" alt="@dog.Name" />
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center opacity-75">
+                                            <span style="font-size: 3.5rem;">🐕</span>
+                                        </div>
+                                    }
+                                    <span
+                                        class="position-absolute bottom-0 start-0 bg-dark bg-opacity-75 text-white px-3 py-1 small rounded-tr-3 m-0">
+                                        @dog.Breed
+                                    </span>
+                                </div>
+
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h3 class="card-title fw-bold mb-2">@dog.Name</h3>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <span class="text-warning fs-5 me-2">★</span>
+                                            <span class="fw-bold text-dark me-1">@dog.Rating.ToString("0.0")</span>
+                                            <span class="text-muted small">(@dog.Reviews?.Count reviews)</span>
+                                        </div>
+                                    </div>
+                                    <div class="pt-3 border-top d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-secondary w-100">Edit Info</button>
+                                        <!-- Bind click action to open the history feed panel -->
+                                        <button class="btn btn-sm btn-outline-primary w-100" @onclick="() => OpenHistoryModal(dog)">View
+                                            History</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- DOG REVIEW HISTORY MODAL POPUP LAYER -->
+@if (showHistoryModal && selectedDogForHistory != null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseHistoryModal">
+        <div class="custom-modal-content max-width-lg shadow-lg border-0" @onclick:stopPropagation="true">
+            
+            <div class="custom-modal-header bg-primary text-white py-3 px-4">
+                <h5 class="m-0 fw-bold d-flex align-items-center gap-2">
+                    <span>📜</span> Review History: @selectedDogForHistory.Name
+                </h5>
+                <button type="button" class="custom-close-btn fs-4" @onclick="CloseHistoryModal">✕</button>
+            </div>
+            
+            <div class="custom-modal-body text-start p-4" style="max-height: 60vh; overflow-y: auto;">
+                @if (selectedDogHistoryReviews == null || !selectedDogHistoryReviews.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <span class="fs-1 d-block mb-2">📋</span>
+                        <p class="mb-0 fw-medium">This pet profile hasn't received any verified business reviews yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var review in selectedDogHistoryReviews)
+                        {
+                            <div class="p-3 border border-light-subtle review-history-card shadow-sm">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-light-subtle">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-primary">🏢</span>
+                                        <h6 class="fw-bold text-dark mb-0">
+                                            @(review.BusinessOwner?.BusinessName ?? "Unknown Business Partner")
+                                        </h6>
+                                    </div>
+                                    <div class="text-warning small letter-spacing-1">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <span>@(i <= review.Rating ? "★" : "☆")</span>
+                                        }
+                                    </div>
+                                </div>
+                                <p class="mb-0 style-quote text-secondary fs-6">
+                                    "@review.Comment"
+                                </p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="custom-modal-footer px-4 py-3 border-0 bg-white">
+                <button type="button" class="btn btn-secondary px-4 fw-bold rounded-pill" @onclick="CloseHistoryModal">Close Record</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+            <!-- ADD DOG MODAL DIALOG POPUP LAYER -->
+            @if (showModal)
+            {
+                <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content shadow-lg border-0">
+                            <div class="modal-header bg-dark text-white">
+                                <h5 class="modal-title fw-bold">🐾 Register New Dog</h5>
+                                <button type="button" class="btn-close btn-close-white" @onclick="CloseAddDogModal"
+                                        aria-label="Close"></button>
+                            </div>
+
+                            <!-- Blazor Interactive EditForm Context wrapper -->
+                            <EditForm Model="@newDog" OnValidSubmit="HandleAddDogSubmit">
+                                <DataAnnotationsValidator />
+
+                                <div class="modal-body p-4">
+                                    @if (!string.IsNullOrEmpty(errorMessage))
+                                    {
+                                        <div class="alert alert-danger py-2 small mb-3">@errorMessage</div>
+                                    }
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-muted">Dog's Name</label>
+                                        <InputText @bind-Value="newDog.Name" class="form-control" placeholder="e.g. Max, Bella"
+                                                   required />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-muted">Breed Type</label>
+                                        <InputText @bind-Value="newDog.Breed" class="form-control" placeholder="e.g. Golden Retriever"
+                                                   required />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-muted">Avatar Profile Image (Optional)</label>
+                                        <!-- HTML File Upload wrapper synced via Blazor stream parsing engine -->
+                                        <InputFile OnChange="OnProfilePictureUploaded" class="form-control" accept=".jpg,.jpeg,.png" />
+                                        <div class="form-text small text-muted">Accepts square format PNG or JPG assets under 2MB.</div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer bg-light p-3">
+                                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseAddDogModal">Cancel</button>
+                                    <button type="submit" class="btn btn-success px-4" disabled="@isSubmitting">
+                                        @if (isSubmitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                            <span>Saving...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Save Entry</span>
+                                        }
+                                    </button>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <style>
+                .transition-hover {
+                    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+                }
+
+                .transition-hover:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+                }
+
+                .object-fit-cover {
+                    object-fit: cover;
+                }
+            </style>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private List<Dog>? myDogsList;
+    private Dog newDog = new();
+    private byte[]? uploadedImageBytes;
+
+    private bool isLoaded = false;
+    private bool showModal = false;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDogsListAsync();
+    }
+
+    private async Task LoadDogsListAsync()
+    {
+        if (AuthStateTask == null) return;
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                using var scope = ServiceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+                myDogsList = await dbContext.Dogs
+                    .AsNoTracking()
+                    .Include(d => d.Reviews)
+                    .Where(d => d.DogOwner.IdentityUserId == userId)
+                    .ToListAsync();
+            }
+        }
+        isLoaded = true;
+    }
+
+    private void OpenAddDogModal()
+    {
+        newDog = new Dog(); // Reset form buffer
+        uploadedImageBytes = null;
+        errorMessage = null;
+        showModal = true;
+    }
+
+    private void CloseAddDogModal()
+    {
+        showModal = false;
+    }
+
+    // Handles safe buffer extraction of client side image file streams [[:1]]
+    private async Task OnProfilePictureUploaded(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                // Enforce a strict 2MB safety parameter file limit guard wrapper [[:1]]
+                if (file.Size > 2 * 1024 * 1024)
+                {
+                    errorMessage = "File size exception: Selected photo exceeds the 2MB threshold boundary limits.";
+                    return;
+                }
+
+                using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                using var memoryStream = new System.IO.MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                uploadedImageBytes = memoryStream.ToArray();
+                errorMessage = null; // Clear old file errors
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Media loading exception failure: {ex.Message}";
+        }
+    }
+
+    private async Task HandleAddDogSubmit()
+    {
+        if (AuthStateTask == null || isSubmitting) return;
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var authState = await AuthStateTask;
+            var user = authState.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                errorMessage = "Security Error: Authentication context has lapsed. Please re-authenticate.";
+                isSubmitting = false;
+                return;
+            }
+
+            using var scope = ServiceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+            // Fetch the local Dog Owner profile linked to the logged in system account
+            var activeOwner = await dbContext.DogOwners
+                .FirstOrDefaultAsync(o => o.IdentityUserId == userId);
+
+            if (activeOwner == null)
+            {
+                errorMessage = "Database Error: Matching Dog Owner profile could not be localized.";
+                isSubmitting = false;
+                return;
+            }
+
+            // Hydrate database entity configuration structural parameters
+            newDog.DogOwnerId = activeOwner.Id;
+            newDog.Rating = 5.0;
+            newDog.ProfilePicture = uploadedImageBytes;
+
+            // Persist and commit row structure modifications safely to PostgreSQL
+            await dbContext.Dogs.AddAsync(newDog);
+            await dbContext.SaveChangesAsync();
+
+            // Reset states, close backdrop views, and re-query fresh database row items
+            showModal = false;
+            await LoadDogsListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Transaction Operational Failure: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    
+    private bool showHistoryModal = false;
+    private Dog? selectedDogForHistory;
+    private List<Review> selectedDogHistoryReviews = new();
+
+    private async Task OpenHistoryModal(Dog targetDog)
+    {
+        selectedDogForHistory = targetDog;
+        showHistoryModal = true;
+
+        try
+        {
+            using var scope = ServiceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+            // Query historical reviews for this exact dog and eagerly load business profiles
+            selectedDogHistoryReviews = await dbContext.Reviews
+                .AsNoTracking()
+                .Include(r => r.BusinessOwner)
+                .Where(r => r.DogId == targetDog.Id)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[History Loading Failure]: {ex.Message}");
+        }
+    }
+
+    private void CloseHistoryModal()
+    {
+        showHistoryModal = false;
+        selectedDogForHistory = null;
+        selectedDogHistoryReviews.Clear();
+    }
+
+}

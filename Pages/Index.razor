@@ -2,12 +2,111 @@
 @layout MainLayout
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
+@inject DoggoDbContext DbContext
 
-<div class="main">
-</div>
+@using DoggoDex.Models
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 
+<PageTitle>DoggoDex - Home</PageTitle>
 
+<AuthorizeView>
+    <!-- DISPLAY THIS IF THE VISITOR IS LOGGED IN -->
+    <Authorized>
+        @if (isLoaded)
+        {
+            @if (userType == "DogOwner")
+            {
+                <div class="container mt-4 animate-fade">
+                    <div class="jumbotron p-5 mb-4 bg-light rounded-3 border">
+                        <!-- Displays the actual database profile first name -->
+                        <h1 class="display-5 fw-bold">🐾 Welcome Back, @displayName!</h1>
+                        <p class="col-md-8 fs-4">Manage your pet registration profiles, check grooming review status, and track historical appointments.</p>
+                        <button class="btn btn-primary btn-lg" type="button">Add a New Dog</button>
+                    </div>
+                </div>
+            }
+            else if (userType == "BusinessOwner")
+            {
+                <div class="container mt-4 animate-fade">
+                    <div class="jumbotron p-5 mb-4 text-white bg-dark rounded-3">
+                        <!-- Displays the actual database business company name -->
+                        <h1 class="display-5 fw-bold">🏢 Welcome Back, @displayName!</h1>
+                        <p class="col-md-8 fs-4">Track received dog review ratings, optimize grooming facility metrics, and manage client feedback threads.</p>
+                        <a href="/reviews" class="btn btn-outline-light btn-lg" type="button">View Recent Reviews</a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="container mt-4 text-center">
+                    <p class="text-muted">Account setup incomplete. Please contact support.</p>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- Skeleton Loader while querying PostgreSQL -->
+            <div class="container mt-4 text-center">
+                <p class="text-muted">Loading profile details...</p>
+            </div>
+        }
+    </Authorized>
+
+    <!-- DISPLAY THIS IF THE VISITOR IS AN UNKNOWN GUEST -->
+    <NotAuthorized>
+        <div class="container mt-5 text-center" style="max-width: 600px;">
+            <h1 class="display-4 fw-bold mb-3">Welcome to DoggoDex</h1>
+            <p class="lead text-muted mb-4">The ultimate tracking directory matching local dog owners with professional grooming and training business providers.</p>
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a href="/login" class="btn btn-primary btn-lg px-4 gap-3">Sign In</a>
+                <a href="/register" class="btn btn-outline-secondary btn-lg px-4">Create Account</a>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
 
-}		
+    private string? userType;
+    private string? displayName;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask == null) return;
+
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            // 1. Extract metadata from the security claims configuration
+            userType = user.FindFirst("UserType")?.Value;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // 2. Query the respective table based on role to grab the actual non-email display string
+                if (userType == "DogOwner")
+                {
+                    var ownerProfile = await DbContext.DogOwners
+                        .FirstOrDefaultAsync(o => o.IdentityUserId == userId);
+                    
+                    displayName = ownerProfile?.FirstName ?? "Owner";
+                }
+                else if (userType == "BusinessOwner")
+                {
+                    var businessProfile = await DbContext.BusinessOwners
+                        .FirstOrDefaultAsync(b => b.IdentityUserId == userId);
+                    
+                    displayName = businessProfile?.BusinessName ?? "Business";
+                }
+            }
+        }
+
+        isLoaded = true;
+    }
+}

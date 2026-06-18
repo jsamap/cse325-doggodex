@@ -1,18 +1,13 @@
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Identity;
+namespace DoggoDex.Models;
 
-namespace DoggoDex.Models
+public class BusinessOwner
 {
-    public class BusinessOwner
-    {
-        public int Id { get; set; }
-        public string BusinessName { get; set; }
-        public string ContactEmail { get; set; }
-        public byte[] ProfilePicture { get; set; }
-        public ICollection<Review> Reviews { get; set; }
+    public int Id { get; set; }
+    public string BusinessName { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public byte[]? ProfilePicture { get; set; }
+    public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-        public string IdentityUserId { get; set; }
-        public IdentityUser IdentityUser { get; set; }
-
-    }
+    public string IdentityUserId { get; set; } = string.Empty;
+    public ApplicationUser IdentityUser { get; set; } = null!;
 }

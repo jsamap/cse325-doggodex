@@ -1,0 +1,127 @@
+@page "/reviews"
+@using DoggoDex.Models
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject IServiceProvider ServiceProvider
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>DoggoDex - Business Reviews</PageTitle>
+
+<div class="container mt-4 animate-fade">
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1">🏢 Business Reviews</h1>
+        <p class="text-muted mb-0">Monitor received ratings, customer feedback logs, and track historical pet profiles.</p>
+    </div>
+
+    @if (!isLoaded)
+    {
+        <div class="text-center my-5 py-5">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <p class="text-muted small">Loading review history...</p>
+        </div>
+    }
+    else if (reviewsList == null || !reviewsList.Any())
+    {
+        <div class="card border border-dashed text-center p-5 bg-light my-4">
+            <div class="fs-1 text-muted mb-3">📋</div>
+            <h3>No Reviews Received Yet</h3>
+            <p class="text-muted max-width-md mx-auto">Your business profile hasn't received any dog grooming or training evaluations yet.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Stats Cards Section -->
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card shadow-sm p-3 border-0 bg-light">
+                    <div class="text-muted small fw-bold text-uppercase">Total Feedback</div>
+                    <div class="fs-2 fw-bold text-dark">@reviewsList.Count</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feed List View Grid Layout -->
+        <div class="d-flex flex-column gap-3">
+            @foreach (var review in reviewsList)
+            {
+                <div class="card shadow-sm border border-light p-4 animate-slide-up">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 pb-3 border-bottom mb-3">
+                        
+                        <!-- Client & Dog Profile Meta Data Block -->
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="review-avatar-container overflow-hidden rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; background: linear-gradient(135deg, #00143a 0%, #002e85 100%);">
+                                <!-- Checks for database image data array blob -->
+                                @if (review.Dog?.ProfilePicture != null && review.Dog.ProfilePicture.Length > 0)
+                                {
+                                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(review.Dog.ProfilePicture)" class="w-100 h-100 img-cover" alt="@review.Dog?.Name" />
+                                }
+                                else
+                                {
+                                    <span style="font-size: 1.3rem;">🐕</span>
+                                }
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">@review.Dog?.Name</h5>
+                                <span class="badge bg-secondary fw-normal small">@review.Dog?.Breed</span>
+                            </div>
+                        </div>
+
+                        <!-- Rating Badge Segment Layout -->
+                        <div class="d-flex flex-row align-items-center gap-1 bg-opacity-10 px-3 py-1.5 rounded-pill border border-warning border-opacity-20">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span class="fs-5 @(i <= review.Rating ? "text-warning" : "text-muted-star")">★</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Main Customer Narrative Comment block -->
+                    <div class="text-start">
+                        <p class="fs-5 text-dark mb-0 style-quote">
+                            "@review.Comment"
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private List<Review>? reviewsList;
+    private bool isLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask == null)
+        {
+            isLoaded = true;
+            return;
+        }
+
+        var authState = await AuthStateTask;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                using var scope = ServiceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+                reviewsList = await dbContext.Reviews
+                    .AsNoTracking()
+                    .Include(r => r.Dog)
+                    .Where(r => r.BusinessOwner.IdentityUserId == userId)
+                    .ToListAsync();
+            }
+        }
+
+        isLoaded = true;
+    }
+}

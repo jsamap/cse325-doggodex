@@ -1,0 +1,370 @@
+@page "/search"
+@using DoggoDex.Models
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>DoggoDex - General Dog Directory</PageTitle>
+
+<div class="container mt-4 animate-fade">
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1">🔍 Explore Dog Directory</h1>
+        <p class="text-muted mb-0">Search public dog registration logs, check breed histories, and inspect groomer
+            reviews.</p>
+        </div>
+
+        <!-- Search Filtering Input Panel Card -->
+        <div class="card shadow-sm border border-light p-3 mb-4 bg-light">
+            <div class="row g-2">
+                <div class="col-12 col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">🔍</span>
+                        <input type="text" class="form-control border-start-0 ps-0"
+                               placeholder="Search by dog name or specific breed..." @bind-value="SearchQuery"
+                               @bind-value:event="oninput" @onkeyup="HandleSearchExecution" />
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <button class="btn btn-primary w-100 fw-bold" @onclick="ExecuteSearchAsync">
+                        Filter Directory
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @if (!isLoaded)
+        {
+            <div class="text-center my-5 py-5">
+                <div class="spinner-border text-primary mb-2" role="status"></div>
+                <p class="text-muted small">Loading directory profiles...</p>
+            </div>
+        }
+        else if (allDogsList == null || !allDogsList.Any())
+        {
+            <div class="card border border-dashed text-center p-5 bg-light my-4">
+                <div class="fs-1 text-muted mb-3">🐩</div>
+                <h3>No Dogs Located</h3>
+                <p class="text-muted max-width-md mx-auto">We couldn't find any registered dogs matching your filters.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Public Directory Feed Loops Grid -->
+            <div class="d-flex flex-wrap gap-4 justify-content-around">
+                @foreach (var dog in allDogsList)
+                {
+                    <!-- A fixed-width container ensuring uniform size across all rows -->
+                    <div class="card-search-sizing shadow-sm border border-light transition-hover bg-white mb-4">
+
+                        <div class="card-header-img position-relative bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mt-3"
+                             style="width: 100%; max-width: 250px; max-height: 250px; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 8px; background: linear-gradient(135deg, #00143a 0%, #002e85 100%);">
+
+                            @if (dog.ProfilePicture != null && dog.ProfilePicture.Length > 0)
+                            {
+                                <img src="data:image/jpeg;base64,@Convert.ToBase64String(dog.ProfilePicture)"
+                                     class="w-100 h-100 img-cover" alt="@dog.Name" />
+                            }
+                            else
+                            {
+                                <div class="text-center opacity-75">
+                                    <span style="font-size: 4rem;">🐕</span>
+                                </div>
+                            }
+
+                            <span
+                                class="position-absolute bottom-0 start-0 bg-dark bg-opacity-75 text-white px-3 py-1 small rounded-tr-3 m-0">
+                                @dog.Breed
+                            </span>
+                        </div>
+
+                        <!-- Card Content Details Panel Wrapper -->
+                        <div class="p-3 d-flex flex-column justify-content-between layout-inner-card">
+                            <div class="text-start">
+                                <h3 class="card-title fw-bold mb-1 fs-4 text-dark">@dog.Name</h3>
+                                <p class="text-muted small mb-2">Owner :@dog.DogOwner.FirstName @dog.DogOwner.LastName</p>
+                                <div class="d-flex align-items-center mb-3">
+                                    <span class="text-warning fs-5 me-2">★</span>
+                                    <span class="fw-bold text-dark me-1">@dog.Rating.ToString("0.0")</span>
+                                    <span class="text-muted small">(@dog.Reviews?.Count reviews)</span>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-top d-flex flex-column gap-2 mt-auto">
+                                <button class="btn btn-sm btn-outline-primary w-100 fw-bold rounded-pill"
+                                        @onclick="() => OpenHistoryModal(dog)">
+                                    View Review Timeline
+                                </button>
+
+                                <AuthorizeView>
+                                    <Authorized>
+                                        @if (context.User.FindFirst("UserType")?.Value == "BusinessOwner")
+                                        {
+                                            <button class="btn btn-sm btn-success w-100 fw-bold rounded-pill"
+                                                    @onclick="() => OpenAddReviewModal(dog)">
+                                                ✍ Add Business Review
+                                            </button>
+                                        }
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+
+                    </div>
+                }
+            </div>
+
+
+        }
+    </div>
+    <!-- FLOATING HISTORY MODAL -->
+    @if (showHistoryModal && selectedDogForHistory != null)
+    {
+        <div class="history-modal-backdrop" @onclick="CloseHistoryModal">
+            <div class="history-modal-box shadow-lg border-0" @onclick:stopPropagation="true">
+                <div class="custom-modal-header bg-primary text-white py-3 px-4">
+                    <h5 class="m-0 fw-bold d-flex align-items-center gap-2">
+                        <span>📜</span> Review Timeline: @selectedDogForHistory.Name
+                    </h5>
+                    <button type="button" class="custom-close-btn fs-4" @onclick="CloseHistoryModal">✕</button>
+                </div>
+                <div class="custom-modal-body text-start p-4" style="max-height: 60vh; overflow-y: auto;">
+                    @if (selectedDogHistoryReviews == null || !selectedDogHistoryReviews.Any())
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <span class="fs-1 d-block mb-2">📋</span>
+                            <p class="mb-0 fw-medium">This pet profile has no reviews yet.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-3">
+                            @foreach (var review in selectedDogHistoryReviews)
+                            {
+                                <div class="p-3 border border-light-subtle review-history-card shadow-sm">
+                                    <div
+                                        class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-light-subtle">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="text-primary">🏢</span>
+                                            <h6 class="fw-bold text-dark mb-0">
+                                                @(review.BusinessOwner?.BusinessName ?? "Unknown Business Partner")
+                                            </h6>
+                                        </div>
+                                        <div class="text-warning small">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <span>@(i <= review.Rating ? "★" : "☆")</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <p class="mb-0 style-quote text-secondary fs-6">"@review.Comment"</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="custom-modal-footer px-4 py-3 border-0 bg-white">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold rounded-pill" @onclick="CloseHistoryModal">Close
+                        Timeline</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- ADD REVIEW MODAL -->
+        @if (showAddReviewModal && selectedDogForReview != null)
+        {
+            <div class="custom-modal-backdrop" @onclick="CloseAddReviewModal">
+                <div class="custom-modal-content shadow-lg border-0" @onclick:stopPropagation="true">
+                    <div class="custom-modal-header bg-success text-white py-3 px-4">
+                        <h5 class="m-0 fw-bold">✍ Add Review for @selectedDogForReview.Name</h5>
+                        <button type="button" class="custom-close-btn fs-4" @onclick="CloseAddReviewModal">✕</button>
+                    </div>
+
+                    <EditForm Model="@newReview" OnValidSubmit="HandleAddReviewSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="custom-modal-body text-start p-4">
+                            @if (!string.IsNullOrEmpty(reviewErrorMessage))
+                            {
+                                <div class="alert alert-danger py-2 small mb-3">@reviewErrorMessage</div>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Evaluation Rating (1-5 Stars)</label>
+                                <InputNumber @bind-Value="newReview.Rating" class="form-control" min="1" max="5" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-muted">Comments</label>
+                                <InputTextArea @bind-Value="newReview.Comment" class="form-control" rows="4"
+                                               placeholder="Write feedback..." required />
+                            </div>
+                        </div>
+
+                        <div class="custom-modal-footer px-4 py-3">
+                            <button type="button" class="btn btn-outline-secondary px-4"
+                                    @onclick="CloseAddReviewModal">Cancel</button>
+                            <button type="submit" class="btn btn-success px-4 ms-2" disabled="@isSubmittingReview">
+                                <span>Submit Review</span>
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private List<Dog>? allDogsList;
+    private string SearchQuery { get; set; } = string.Empty;
+    private bool isLoaded = false;
+
+    // History Modal Parameters
+    private bool showHistoryModal = false;
+    private Dog? selectedDogForHistory;
+    private List<Review> selectedDogHistoryReviews = new();
+
+    // Review Form Submission Parameters
+    private bool showAddReviewModal = false;
+    private Dog? selectedDogForReview;
+    private Review newReview = new();
+    private bool isSubmittingReview = false;
+    private string? reviewErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ExecuteSearchAsync();
+    }
+
+    private async Task HandleSearchExecution(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ExecuteSearchAsync();
+        }
+    }
+
+    private async Task ExecuteSearchAsync()
+{
+    isLoaded = false;
+    using var scope = ServiceProvider.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+    var query = dbContext.Dogs
+        .AsNoTracking()
+        .Include(d => d.Reviews)
+        .Include(d => d.DogOwner)
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(SearchQuery))
+    {
+        var cleanedQuery = $"%{SearchQuery.Trim()}%";
+        query = query.Where(d => EF.Functions.ILike(d.Name, cleanedQuery) ||
+                                 EF.Functions.ILike(d.Breed, cleanedQuery));
+    }
+
+    allDogsList = await query.ToListAsync();
+    isLoaded = true;
+}
+
+
+    private async Task OpenHistoryModal(Dog targetDog)
+    {
+        selectedDogForHistory = targetDog;
+        showHistoryModal = true;
+        using var scope = ServiceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+        selectedDogHistoryReviews = await dbContext.Reviews
+            .AsNoTracking()
+            .Include(r => r.BusinessOwner)
+            .Where(r => r.DogId == targetDog.Id)
+            .ToListAsync();
+    }
+
+    private void CloseHistoryModal()
+    {
+        showHistoryModal = false;
+        selectedDogForHistory = null;
+        selectedDogHistoryReviews.Clear();
+    }
+
+    private void OpenAddReviewModal(Dog targetDog)
+    {
+        selectedDogForReview = targetDog;
+        newReview = new Review { Rating = 5, DogId = targetDog.Id };
+        reviewErrorMessage = null;
+        showAddReviewModal = true;
+    }
+
+    private void CloseAddReviewModal()
+    {
+        showAddReviewModal = false;
+        selectedDogForReview = null;
+    }
+
+    private async Task HandleAddReviewSubmit()
+    {
+        if (AuthStateTask == null || isSubmittingReview) return;
+
+        isSubmittingReview = true;
+        reviewErrorMessage = null;
+
+        try
+        {
+            var authState = await AuthStateTask;
+            var user = authState.User;
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                reviewErrorMessage = "Security Error: Session has lapsed.";
+                isSubmittingReview = false;
+                return;
+            }
+
+            using var scope = ServiceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DoggoDbContext>();
+
+            var currentBusiness = await dbContext.BusinessOwners
+                .FirstOrDefaultAsync(b => b.IdentityUserId == userId);
+
+            if (currentBusiness == null)
+            {
+                reviewErrorMessage = "Database Error: Business profile missing.";
+                isSubmittingReview = false;
+                return;
+            }
+
+            newReview.BusinessOwnerId = currentBusiness.Id;
+
+            await dbContext.Reviews.AddAsync(newReview);
+            await dbContext.SaveChangesAsync();
+
+            // Recalculate average rating for the dog
+            var averageRating = await dbContext.Reviews
+                .Where(r => r.DogId == newReview.DogId)
+                .AverageAsync(r => r.Rating);
+
+            var targetDogToUpdate = await dbContext.Dogs.FirstOrDefaultAsync(d => d.Id == newReview.DogId);
+            if (targetDogToUpdate != null)
+            {
+                targetDogToUpdate.Rating = averageRating;
+                await dbContext.SaveChangesAsync();
+            }
+
+            showAddReviewModal = false;
+            await ExecuteSearchAsync();
+        }
+        catch (Exception ex)
+        {
+            reviewErrorMessage = $"Operational Failure: {ex.Message}";
+        }
+        finally
+        {
+            isSubmittingReview = false;
+        }
+    }
+}

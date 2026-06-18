@@ -1,0 +1,44 @@
+@page "/profile"
+@layout MainLayout
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<EditForm Model="User" OnValidSubmit="HandleValidSubmit" FormName="UserRegistration">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="username">Username:</label>
+        <InputText id="username" class="form-control" @bind-Value="User.Username" />
+        <ValidationMessage For="() => User.Username" />
+    </div>
+
+    <div class="form-group">
+        <label for="age">Age:</label>
+        <InputNumber id="age" class="form-control" @bind-Value="User.Age" />
+        <ValidationMessage For="() => User.Age" />
+
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</EditForm>
+
+
+@code {
+    [SupplyParameterFromForm]
+    public UserModel User { get; set; } = new();
+
+    private void HandleValidSubmit()
+    {
+        Console.WriteLine($"########### Username: {User.Username}, Age: {User.Age}");
+    }
+
+    // Model definition
+    public class UserModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Username is required.")]
+        public string Username { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Range(18, 99, ErrorMessage = "Must be between 18 and 99.")]
+        public int Age { get; set; }
+    }
+}

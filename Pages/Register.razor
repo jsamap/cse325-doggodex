@@ -1,0 +1,79 @@
+@page "/register"
+@using DoggoDex.Models
+@inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<div class="container mt-5" style="max-width: 500px;">
+    <div class="card shadow-sm p-4">
+        <h3 class="text-center mb-4">Create Your Account</h3>
+
+        <!-- Standard native HTML form to ensure secure cookie processing -->
+        <form action="/api/auth/register" method="POST">
+            
+            <!-- 2. ADD THIS SECURE ELEMENT RIGHT INSIDE THE FORM TAG -->
+            <AntiforgeryToken />
+
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="Email" class="form-control" required placeholder="name@example.com" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="Password" class="form-control" required placeholder="Minimum 6 characters" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">I am signing up as a:</label>
+                <select name="UserType" class="form-select" @onchange="OnUserTypeChanged" value="@selectedUserType">
+                    <option value="DogOwner">Dog Owner</option>
+                    <option value="BusinessOwner">Business Owner</option>
+                </select>
+                <input type="hidden" name="UserType" value="@selectedUserType" />
+            </div>
+
+            <!-- Dynamic Fields for Dog Owners -->
+            @if (selectedUserType == "DogOwner")
+            {
+                <div class="p-3 bg-light rounded mb-3 animate-fade">
+                    <h5>Dog Owner Profile</h5>
+                    <div class="mb-2">
+                        <label class="form-label text-muted small">First Name</label>
+                        <input type="text" name="FirstName" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-muted small">Last Name</label>
+                        <input type="text" name="LastName" class="form-control" required />
+                    </div>
+                </div>
+            }
+
+            <!-- Dynamic Fields for Business Owners -->
+            @if (selectedUserType == "BusinessOwner")
+            {
+                <div class="p-3 bg-light rounded mb-3 animate-fade">
+                    <h5>Business Profile</h5>
+                    <div class="mb-2">
+                        <label class="form-label text-muted small">Business Name</label>
+                        <input type="text" name="BusinessName" class="form-control" required />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-muted small">Contact Email</label>
+                        <input type="email" name="ContactEmail" class="form-control" required />
+                    </div>
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100 mt-2">Sign Up</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string selectedUserType = "DogOwner";
+
+    private void OnUserTypeChanged(ChangeEventArgs e)
+    {
+        selectedUserType = e.Value?.ToString() ?? "DogOwner";
+    }
+}
