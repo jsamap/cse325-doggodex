@@ -1,5 +1,5 @@
 # Step 1: Build the application using the .NET 9 SDK
-FROM ://microsoft.com AS build
+FROM mcr.microsoft.com AS build
 WORKDIR /src
 
 # Copy the csproj file and restore dependencies
@@ -11,7 +11,7 @@ COPY . .
 RUN dotnet publish -c Release -o /app/publish
 
 # Step 2: Create the runtime image
-FROM ://microsoft.com AS final
+FROM mcr.microsoft.com AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
