@@ -8,14 +8,15 @@ public class DoggoDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<DogOwner> DogOwners { get; set; }
     public DbSet<BusinessOwner> BusinessOwners { get; set; }
-    public DbSet<Dog> Dogs { get; set; } // Added
-    public DbSet<Review> Reviews { get; set; } // Added
+    public DbSet<Dog> Dogs { get; set; }
+    public DbSet<Review> Reviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         // Keep existing One-to-One constraints
+        // One-to-one between user tables to add fields to the framework user.
         builder.Entity<ApplicationUser>()
             .HasOne(u => u.DogOwnerProfile)
             .WithOne(p => p.IdentityUser)
@@ -28,7 +29,6 @@ public class DoggoDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey<BusinessOwner>(p => p.IdentityUserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure explicit relationships for Review to prevent multi-path cascades
         builder.Entity<Review>()
             .HasOne(r => r.Dog)
             .WithMany(d => d.Reviews)
@@ -39,6 +39,6 @@ public class DoggoDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(r => r.BusinessOwner)
             .WithMany(b => b.Reviews)
             .HasForeignKey(r => r.BusinessOwnerId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevents circular delete issues in Postgres
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

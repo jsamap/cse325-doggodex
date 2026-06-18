@@ -22,7 +22,7 @@
                         <!-- Displays the actual database profile first name -->
                         <h1 class="display-5 fw-bold">🐾 Welcome Back, @displayName!</h1>
                         <p class="col-md-8 fs-4">Manage your pet registration profiles, check grooming review status, and track historical appointments.</p>
-                        <button class="btn btn-primary btn-lg" type="button">Add a New Dog</button>
+                        <a href="/mydogs" class="btn btn-primary btn-lg" type="button">Manage my dogs</a>
                     </div>
                 </div>
             }
@@ -83,13 +83,13 @@
 
         if (user.Identity is { IsAuthenticated: true })
         {
-            // 1. Extract metadata from the security claims configuration
+            // Extract metadata from the security claims configuration
             userType = user.FindFirst("UserType")?.Value;
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (!string.IsNullOrEmpty(userId))
             {
-                // 2. Query the respective table based on role to grab the actual non-email display string
+                // Query the respective table based on role to grab the actual non-email display string
                 if (userType == "DogOwner")
                 {
                     var ownerProfile = await DbContext.DogOwners

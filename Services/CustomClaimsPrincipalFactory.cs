@@ -16,10 +16,10 @@ public class CustomClaimsPrincipalFactory : IUserClaimsPrincipalFactory<Applicat
 
     public async Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)
     {
-        // 1. Create a clean claims identity instance matching the user
+        // Create a clean claims identity instance matching the user
         var identity = new ClaimsIdentity(IdentityConstants.ApplicationScheme);
         
-        // 2. Add the mandatory base identity tracking claims required by ASP.NET Core
+        // Add the mandatory base identity tracking claims required by ASP.NET Core
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
         
         if (!string.IsNullOrEmpty(user.Email))
@@ -28,13 +28,13 @@ public class CustomClaimsPrincipalFactory : IUserClaimsPrincipalFactory<Applicat
             identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
         }
 
-        // 3. Inject your custom UserType claim directly into the cookie payload
+        // Inject custom UserType claim directly into the cookie payload
         if (!string.IsNullOrEmpty(user.UserType))
         {
             identity.AddClaim(new Claim("UserType", user.UserType));
         }
 
-        // 4. Return the fully populated principal configuration wrapper
+        // Return the fully populated principal configuration wrapper
         return new ClaimsPrincipal(identity);
     }
 }

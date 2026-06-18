@@ -37,6 +37,7 @@ public class AuthController : ControllerBase
                 return Content("Validation Error: Email and password fields cannot be blank.");
             }
 
+            // Use application user to bind additional properties to the Framework user
             var user = new ApplicationUser
             {
                 UserName = email,
@@ -48,12 +49,12 @@ public class AuthController : ControllerBase
             var result = await _userManager.CreateAsync(user, password);
             if (!result.Succeeded)
             {
-                // Join error lists and return plain readable layout text for debugging
                 var description = string.Join(" | ", result.Errors.Select(e => e.Description));
                 Console.WriteLine($"[Identity Error]: {description}");
                 return Content($"Registration validation failed: {description}");
             }
 
+            // User type could be DogOwner or BusinessOwner
             if (userType == "DogOwner")
             {
                 var dogOwner = new DogOwner
@@ -110,7 +111,7 @@ public class AuthController : ControllerBase
             return Redirect("/");
         }
 
-        // Handle generic login failure
+        // Handle generic failure
         return Redirect("/login?error=Invalid email or password layout.");
     }
 

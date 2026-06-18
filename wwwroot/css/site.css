@@ -549,13 +549,20 @@ input[type="range"]::-moz-range-thumb {
    ========================================== */
 .card-search-sizing {
     width: 100% !important;
-    max-width: 282px !important; /* Matches 250px image width + padding gutters precisely */
+    max-width: 282px !important;
     border-radius: 12px !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
+    height: 520px;
 }
 
 .layout-inner-card {
     height: 200px !important; /* Guarantees matching button alignments on all text scales */
+}
+p, span, button, label, input{
+    font-size: 1.3rem !important;
+}
+.custom-card-height {
+    height: 20rem;
 }

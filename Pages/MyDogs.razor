@@ -87,139 +87,141 @@
             </div>
 
             <!-- DOG REVIEW HISTORY MODAL POPUP LAYER -->
-@if (showHistoryModal && selectedDogForHistory != null)
-{
-    <div class="custom-modal-backdrop" @onclick="CloseHistoryModal">
-        <div class="custom-modal-content max-width-lg shadow-lg border-0" @onclick:stopPropagation="true">
-            
-            <div class="custom-modal-header bg-primary text-white py-3 px-4">
-                <h5 class="m-0 fw-bold d-flex align-items-center gap-2">
-                    <span>📜</span> Review History: @selectedDogForHistory.Name
-                </h5>
-                <button type="button" class="custom-close-btn fs-4" @onclick="CloseHistoryModal">✕</button>
-            </div>
-            
-            <div class="custom-modal-body text-start p-4" style="max-height: 60vh; overflow-y: auto;">
-                @if (selectedDogHistoryReviews == null || !selectedDogHistoryReviews.Any())
-                {
-                    <div class="text-center py-5 text-muted">
-                        <span class="fs-1 d-block mb-2">📋</span>
-                        <p class="mb-0 fw-medium">This pet profile hasn't received any verified business reviews yet.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="d-flex flex-column gap-3">
-                        @foreach (var review in selectedDogHistoryReviews)
-                        {
-                            <div class="p-3 border border-light-subtle review-history-card shadow-sm">
-                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-light-subtle">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="text-primary">🏢</span>
-                                        <h6 class="fw-bold text-dark mb-0">
-                                            @(review.BusinessOwner?.BusinessName ?? "Unknown Business Partner")
-                                        </h6>
-                                    </div>
-                                    <div class="text-warning small letter-spacing-1">
-                                        @for (int i = 1; i <= 5; i++)
-                                        {
-                                            <span>@(i <= review.Rating ? "★" : "☆")</span>
-                                        }
-                                    </div>
-                                </div>
-                                <p class="mb-0 style-quote text-secondary fs-6">
-                                    "@review.Comment"
-                                </p>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
-
-            <div class="custom-modal-footer px-4 py-3 border-0 bg-white">
-                <button type="button" class="btn btn-secondary px-4 fw-bold rounded-pill" @onclick="CloseHistoryModal">Close Record</button>
-            </div>
-        </div>
-    </div>
-}
-
-
-            <!-- ADD DOG MODAL DIALOG POPUP LAYER -->
-            @if (showModal)
+            @if (showHistoryModal && selectedDogForHistory != null)
             {
-                <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog">
-                    <div class="modal-dialog modal-dialog-centered" role="document">
-                        <div class="modal-content shadow-lg border-0">
-                            <div class="modal-header bg-dark text-white">
-                                <h5 class="modal-title fw-bold">🐾 Register New Dog</h5>
-                                <button type="button" class="btn-close btn-close-white" @onclick="CloseAddDogModal"
-                                        aria-label="Close"></button>
-                            </div>
+                <div class="custom-modal-backdrop" @onclick="CloseHistoryModal">
+                    <div class="custom-modal-content max-width-lg shadow-lg border-0" @onclick:stopPropagation="true">
 
-                            <!-- Blazor Interactive EditForm Context wrapper -->
-                            <EditForm Model="@newDog" OnValidSubmit="HandleAddDogSubmit">
-                                <DataAnnotationsValidator />
+                        <div class="custom-modal-header bg-primary text-white py-3 px-4">
+                            <h5 class="m-0 fw-bold d-flex align-items-center gap-2">
+                                <span>📜</span> Review History: @selectedDogForHistory.Name
+                            </h5>
+                            <button type="button" class="custom-close-btn fs-4" @onclick="CloseHistoryModal">✕</button>
+                        </div>
 
-                                <div class="modal-body p-4">
-                                    @if (!string.IsNullOrEmpty(errorMessage))
+                        <div class="custom-modal-body text-start p-4" style="max-height: 60vh; overflow-y: auto;">
+                            @if (selectedDogHistoryReviews == null || !selectedDogHistoryReviews.Any())
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <span class="fs-1 d-block mb-2">📋</span>
+                                    <p class="mb-0 fw-medium">This pet profile hasn't received any verified business reviews yet.</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column gap-3">
+                                    @foreach (var review in selectedDogHistoryReviews)
                                     {
-                                        <div class="alert alert-danger py-2 small mb-3">@errorMessage</div>
+                                        <div class="p-3 border border-light-subtle review-history-card shadow-sm">
+                                            <div
+                                                class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-light-subtle">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="text-primary">🏢</span>
+                                                    <h6 class="fw-bold text-dark mb-0">
+                                                        @(review.BusinessOwner?.BusinessName ?? "Unknown Business Partner")
+                                                    </h6>
+                                                </div>
+                                                <div class="text-warning small letter-spacing-1">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <span>@(i <= review.Rating ? "★" : "☆")</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <p class="mb-0 style-quote text-secondary fs-6">
+                                                "@review.Comment"
+                                            </p>
+                                        </div>
                                     }
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-muted">Dog's Name</label>
-                                        <InputText @bind-Value="newDog.Name" class="form-control" placeholder="e.g. Max, Bella"
-                                                   required />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-muted">Breed Type</label>
-                                        <InputText @bind-Value="newDog.Breed" class="form-control" placeholder="e.g. Golden Retriever"
-                                                   required />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-muted">Avatar Profile Image (Optional)</label>
-                                        <!-- HTML File Upload wrapper synced via Blazor stream parsing engine -->
-                                        <InputFile OnChange="OnProfilePictureUploaded" class="form-control" accept=".jpg,.jpeg,.png" />
-                                        <div class="form-text small text-muted">Accepts square format PNG or JPG assets under 2MB.</div>
-                                    </div>
                                 </div>
+                            }
+                        </div>
 
-                                <div class="modal-footer bg-light p-3">
-                                    <button type="button" class="btn btn-outline-secondary" @onclick="CloseAddDogModal">Cancel</button>
-                                    <button type="submit" class="btn btn-success px-4" disabled="@isSubmitting">
-                                        @if (isSubmitting)
-                                        {
-                                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                            <span>Saving...</span>
-                                        }
-                                        else
-                                        {
-                                            <span>Save Entry</span>
-                                        }
-                                    </button>
-                                </div>
-                            </EditForm>
+                        <div class="custom-modal-footer px-4 py-3 border-0 bg-white">
+                            <button type="button" class="btn btn-secondary px-4 fw-bold rounded-pill" @onclick="CloseHistoryModal">Close
+                                Record</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-
-            <style>
-                .transition-hover {
-                    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
                 }
 
-                .transition-hover:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+
+                <!-- ADD DOG MODAL DIALOG POPUP LAYER -->
+                @if (showModal)
+                {
+                    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content shadow-lg border-0">
+                                <div class="modal-header bg-dark text-white">
+                                    <h5 class="modal-title fw-bold">🐾 Register New Dog</h5>
+                                    <button type="button" class="btn-close btn-close-white" @onclick="CloseAddDogModal"
+                                            aria-label="Close"></button>
+                                </div>
+
+                                <!-- Blazor Interactive EditForm Context wrapper -->
+                                <EditForm Model="@newDog" OnValidSubmit="HandleAddDogSubmit">
+                                    <DataAnnotationsValidator />
+
+                                    <div class="modal-body p-4">
+                                        @if (!string.IsNullOrEmpty(errorMessage))
+                                        {
+                                            <div class="alert alert-danger py-2 small mb-3">@errorMessage</div>
+                                        }
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-muted">Dog's Name</label>
+                                            <InputText @bind-Value="newDog.Name" class="form-control" placeholder="e.g. Max, Bella"
+                                                       required />
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-muted">Breed Type</label>
+                                            <InputText @bind-Value="newDog.Breed" class="form-control" placeholder="e.g. Golden Retriever"
+                                                       required />
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small text-muted">Avatar Profile Image (Optional)</label>
+                                            <!-- HTML File Upload wrapper synced via Blazor stream parsing engine -->
+                                            <InputFile OnChange="OnProfilePictureUploaded" class="form-control" accept=".jpg,.jpeg,.png" />
+                                            <div class="form-text small text-muted">Accepts square format PNG or JPG assets under 2MB.</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-footer bg-light p-3">
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="CloseAddDogModal">Cancel</button>
+                                        <button type="submit" class="btn btn-success px-4" disabled="@isSubmitting">
+                                            @if (isSubmitting)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                                <span>Saving...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Save Entry</span>
+                                            }
+                                        </button>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
                 }
 
-                .object-fit-cover {
-                    object-fit: cover;
-                }
-            </style>
+                <style>
+                    .transition-hover {
+                        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+                    }
+
+                    .transition-hover:hover {
+                        transform: translateY(-4px);
+                        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+                    }
+
+                    .object-fit-cover {
+                        object-fit: cover;
+                    }
+                </style>
 
 @code {
     [CascadingParameter]
@@ -276,7 +278,6 @@
         showModal = false;
     }
 
-    // Handles safe buffer extraction of client side image file streams [[:1]]
     private async Task OnProfilePictureUploaded(InputFileChangeEventArgs e)
     {
         try
@@ -284,7 +285,7 @@
             var file = e.File;
             if (file != null)
             {
-                // Enforce a strict 2MB safety parameter file limit guard wrapper [[:1]]
+                // Enforce a strict 2MB safety parameter file limit
                 if (file.Size > 2 * 1024 * 1024)
                 {
                     errorMessage = "File size exception: Selected photo exceeds the 2MB threshold boundary limits.";
@@ -295,7 +296,7 @@
                 using var memoryStream = new System.IO.MemoryStream();
                 await stream.CopyToAsync(memoryStream);
                 uploadedImageBytes = memoryStream.ToArray();
-                errorMessage = null; // Clear old file errors
+                errorMessage = null;
             }
         }
         catch (Exception ex)
@@ -338,7 +339,7 @@
                 return;
             }
 
-            // Hydrate database entity configuration structural parameters
+            // Get database entity configuration structural parameters
             newDog.DogOwnerId = activeOwner.Id;
             newDog.Rating = 5.0;
             newDog.ProfilePicture = uploadedImageBytes;

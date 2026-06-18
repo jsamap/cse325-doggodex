@@ -8,6 +8,7 @@ public class DogOwner
     public byte[]? ProfilePicture { get; set; }
     public ICollection<Dog> Dogs { get; set; } = new List<Dog>();
 
+    // Bind to IdentityUser by ID
     public string IdentityUserId { get; set; } = string.Empty;
     public ApplicationUser IdentityUser { get; set; } = null!;
 }

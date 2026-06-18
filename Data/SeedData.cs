@@ -16,7 +16,7 @@ public static class SeedData
         Console.WriteLine("Verifying database connection and applying migrations...");
         await context.Database.MigrateAsync();
 
-        // 1. SAFE DATA WIPE FOR SUPABASE
+        // SAFE DATA RESET FOR SUPABASE
         if (context.Users.Any())
         {
             Console.WriteLine("Existing data found. Clearing application tables for fresh seed...");
@@ -36,15 +36,12 @@ public static class SeedData
                 RESTART IDENTITY CASCADE;");
         }
 
-        // 2. SEED FRESH DATASET
+        // SEED FRESH DATASET
         if (!context.Users.Any())
         {
             Console.WriteLine("Seeding deep relational application data...");
 
-            // ==========================================
-            // A. SEED BUSINESS OWNERS
-            // ==========================================
-            
+            // SEED BUSINESS OWNERS
             // Business 1
             var bizUser1 = new ApplicationUser
             {
@@ -82,10 +79,7 @@ public static class SeedData
             await context.BusinessOwners.AddAsync(bizProfile2);
 
 
-            // ==========================================
-            // B. SEED DOG OWNERS & THEIR DOGS
-            // ==========================================
-
+            // SEED DOG OWNERS & THEIR DOGS
             // Owner 1 & Dog 1
             var ownerUser1 = new ApplicationUser
             {
@@ -192,6 +186,7 @@ public static class SeedData
             };
             await context.Dogs.AddAsync(dog4);
 
+            // Add Sky
             // Fetch the image from your request via an HTTP stream or localfile
             byte[]? skyImageBytes = null;
             try
@@ -221,9 +216,7 @@ public static class SeedData
             
 
 
-            // ==========================================
-            // C. SEED INTERRELATED REVIEWS
-            // ==========================================
+            // SEED INTERRELATED REVIEWS
 
             var reviews = new List<Review>
             {
@@ -251,7 +244,6 @@ public static class SeedData
                     Dog = dog3,
                     BusinessOwner = bizProfile2
                 },
-                // Added review for Max from academy@doggodex.com
                 new() {
                     Comment = "Max showed outstanding athletic skill on the agility platform today! His focused posture and confidence on the elevated planks are excellent.",
                     Rating = 5,
@@ -268,7 +260,7 @@ public static class SeedData
 
             await context.Reviews.AddRangeAsync(reviews);
 
-            // Save all structural changes to PostgreSQL
+            // Save all structural changes to PostgreSQL using the DataContext
             await context.SaveChangesAsync();
             Console.WriteLine("Deep seeding of multiple objects completed successfully.");
         }

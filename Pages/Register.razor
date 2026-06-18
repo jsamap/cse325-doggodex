@@ -7,10 +7,8 @@
     <div class="card shadow-sm p-4">
         <h3 class="text-center mb-4">Create Your Account</h3>
 
-        <!-- Standard native HTML form to ensure secure cookie processing -->
         <form action="/api/auth/register" method="POST">
             
-            <!-- 2. ADD THIS SECURE ELEMENT RIGHT INSIDE THE FORM TAG -->
             <AntiforgeryToken />
 
             <div class="mb-3">

@@ -7,16 +7,16 @@ using Microsoft.AspNetCore.Components.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. ADD CORE BLAZOR SERVICES
+// ADD CORE BLAZOR SERVICES
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
 
-// 2. REGISTER DATABASE CONNECTION (PostgreSQL via Npgsql)
+// REGISTER DATABASE CONNECTION [PostgreSQL]
 builder.Services.AddDbContext<DoggoDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))); 
 
-// 3. CONFIGURE IDENTITY SERVICES USING ADDIDENTITYCORE (Bypasses CS0411)
+// CONFIGURE IDENTITY SERVICES USING ADDIDENTITYCORE
 builder.Services.AddIdentityCore<ApplicationUser>(options => 
     {
         options.SignIn.RequireConfirmedAccount = false;
@@ -26,22 +26,22 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Password.RequireUppercase = false;
     })
     .AddEntityFrameworkStores<DoggoDbContext>()
-    .AddSignInManager<SignInManager<ApplicationUser>>() // Explicitly add SignInManager
+    .AddSignInManager<SignInManager<ApplicationUser>>()
     .AddDefaultTokenProviders()
-    .AddClaimsPrincipalFactory<CustomClaimsPrincipalFactory>(); // Injects custom UserType claim
+    .AddClaimsPrincipalFactory<CustomClaimsPrincipalFactory>();
 
-// 4. CONFIGURE COOKIE AUTHENTICATION FOR BLALZOR CIRCUITS
+// CONFIGURE COOKIE AUTHENTICATION FOR BLALZOR CIRCUITS
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
-// 5. REGISTER BLAZOR SERVER AUTHENTICATION PROVIDER & STATE MANAGERS
+// REGISTER BLAZOR SERVER AUTHENTICATION PROVIDER & STATE MANAGERS
 builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStateProvider>();
 builder.Services.AddScoped<UserSessionState>(); 
 builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// 6. CONFIGURE THE HTTP REQUEST PIPELINE
+// CONFIGURE THE HTTP REQUEST PIPELINE
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -52,27 +52,27 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// 7. ADD SECURITY MIDDLEWARE
+// ADD SECURITY MIDDLEWARE
 app.UseAntiforgery(); 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 8. MAP CONTROLLER & BACKEND ROUTING ENDPOINTS
+// MAP CONTROLLER & BACKEND ROUTING ENDPOINTS
 app.MapControllers(); 
 
-// 9. MAP BLAZOR RUNTIME ENDPOINTS
+// MAP BLAZOR RUNTIME ENDPOINTS
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 
-// 10. INITIALIZE / AUTOMATICALLY SEED DATABASE TABLES
+// INITIALIZE / AUTOMATICALLY SEED DATABASE TABLES
 var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
 using (var scope = scopeFactory.CreateScope())
 {
     try
     {
-        await SeedData.InitializeAsync(scope.ServiceProvider);
+        // await SeedData.InitializeAsync(scope.ServiceProvider);
     }
     catch (Exception ex)
     {
